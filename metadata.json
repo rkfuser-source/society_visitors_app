@@ -1,0 +1,5 @@
+{
+  "name": "Secure Society Entry",
+  "description": "A secure, modern visitor management system for gated residential societies.",
+  "requestFramePermissions": ["camera"]
+}

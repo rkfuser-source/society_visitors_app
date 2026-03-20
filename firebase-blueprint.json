@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the system (Resident, Guard, or Admin).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["resident", "guard", "admin"] },
+        "societyId": { "type": "string" },
+        "houseNumber": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "societyId"]
+    },
+    "PreApproval": {
+      "title": "Pre-Approval",
+      "description": "A visitor pre-approval created by a resident.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "residentUid": { "type": "string" },
+        "societyId": { "type": "string" },
+        "visitorName": { "type": "string" },
+        "visitorPhone": { "type": "string" },
+        "purpose": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "vehicleType": { "type": "string", "enum": ["car", "bike", "other", "none"] },
+        "expectedArrival": { "type": "string", "format": "date-time" },
+        "isRecurring": { "type": "boolean" },
+        "numberOfPeople": { "type": "integer" },
+        "status": { "type": "string", "enum": ["pending", "used", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["residentUid", "societyId", "visitorName", "status"]
+    },
+    "VisitorLog": {
+      "title": "Visitor Log",
+      "description": "A record of a visitor's entry and exit.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "societyId": { "type": "string" },
+        "preApprovalId": { "type": "string" },
+        "visitorName": { "type": "string" },
+        "visitorPhone": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "vehicleType": { "type": "string" },
+        "houseNumber": { "type": "string" },
+        "residentUid": { "type": "string" },
+        "entryTime": { "type": "string", "format": "date-time" },
+        "exitTime": { "type": "string", "format": "date-time" },
+        "photoUrl": { "type": "string" },
+        "guardUid": { "type": "string" },
+        "status": { "type": "string", "enum": ["in", "out"] }
+      },
+      "required": ["societyId", "visitorName", "entryTime", "status"]
+    },
+    "Society": {
+      "title": "Society",
+      "description": "A gated residential society.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "adminUid": { "type": "string" }
+      },
+      "required": ["name", "adminUid"]
+    }
+  },
+  "firestore": {
+    "/societies/{societyId}": {
+      "schema": "Society",
+      "description": "Societies collection."
+    },
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "Users collection."
+    },
+    "/preApprovals/{approvalId}": {
+      "schema": "PreApproval",
+      "description": "Pre-approvals for visitors."
+    },
+    "/visitorLogs/{logId}": {
+      "schema": "VisitorLog",
+      "description": "Logs of visitor entries and exits."
+    }
+  }
+}

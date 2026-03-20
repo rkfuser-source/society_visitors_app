@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Society: { name, location, adminUid }
+    // User: { uid, email, displayName, role, societyId, houseNumber, phoneNumber }
+    // PreApproval: { residentUid, societyId, visitorName, visitorPhone, purpose, vehicleNumber, vehicleType, expectedArrival, isRecurring, numberOfPeople, status }
+    // VisitorLog: { societyId, preApprovalId, visitorName, visitorPhone, vehicleNumber, vehicleType, houseNumber, residentUid, entryTime, exitTime, photoUrl, guardUid, status }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        getUserData().role == 'admin' || 
+        (request.auth.token.email == "rkfuser@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isGuard() {
+      return isAuthenticated() && getUserData().role == 'guard';
+    }
+
+    function isResident() {
+      return isAuthenticated() && getUserData().role == 'resident';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /societies/{societyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if isAuthenticated() && (isOwner(uid) || isAdmin() || isGuard());
+      allow create: if isAuthenticated() && (isOwner(uid) || isAdmin());
+      allow update: if isAuthenticated() && (isOwner(uid) || isAdmin());
+    }
+
+    match /preApprovals/{approvalId} {
+      allow read: if isAuthenticated() && (
+        resource.data.residentUid == request.auth.uid || 
+        isAdmin() || 
+        isGuard()
+      );
+      allow create: if isResident() && request.resource.data.residentUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (isResident() && resource.data.residentUid == request.auth.uid) || 
+        isGuard() || 
+        isAdmin()
+      );
+      allow delete: if isResident() && resource.data.residentUid == request.auth.uid;
+    }
+
+    match /visitorLogs/{logId} {
+      allow read: if isAuthenticated() && (
+        resource.data.residentUid == request.auth.uid || 
+        isAdmin() || 
+        isGuard()
+      );
+      allow create: if isGuard() || isAdmin();
+      allow update: if isGuard() || isAdmin();
+    }
+  }
+}
